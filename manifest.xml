@@ -1,0 +1,14 @@
+<package>
+  <description brief="rit_aero">
+
+     rit_aero
+
+  </description>
+  <author>ardrone</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/rit_aero</url>
+
+</package>
+
+
