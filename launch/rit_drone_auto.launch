@@ -9,10 +9,10 @@
         <param name="euler_angle_max" value="0.5" />	<!-- maximum allowable body angle in radians = 5 degrees -->
         <param name="control_vz_max" value="1000" />		<!-- maximum z velocity in mm/sec = 0.2m/sec -->
 	    <param name="control_yaw" value="4.5" />		<!-- maximum rotation rate in radians/sec = 40 degrees per second (1/9 rev/sec) -->
-
+	<param name="flying_mode" value="1" />
 	    <param name="detect_type" value="10" />
 	    <param name="detections_select_h" value="32" />	<!-- In the horizontal camera, look for the orange-blue-orange markers -->
-	    <param name="detections_select_v_hsync" value="128" />  <!-- In the vertical camera, detect the A4 marker -->
+	    <param name="detections_select_v_hsync" value="0" />  <!-- In the vertical camera, detect the A4 marker -->
 	    <param name="enemy_colors" value="3" />			<!-- Orange-Blue-Orange = 3 -->
 	    <param name="enemy_without_shell" value="0" />	<!-- Detect the indoor stickers, rather than the outdoor hull -->
 	</node>
