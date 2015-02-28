@@ -36,6 +36,7 @@ class BasicDroneController(object):
 		self.pubLand    = rospy.Publisher('/ardrone/land',Empty)
 		self.pubTakeoff = rospy.Publisher('/ardrone/takeoff',Empty)
 		self.pubReset   = rospy.Publisher('/ardrone/reset',Empty)
+		self.pubFlatTrim = rospy.Publisher('/ardrone/flattrim', Empty)
 		
 		# Allow the controller to publish to the /cmd_vel topic and thus control the drone
 		self.pubCommand = rospy.Publisher('/cmd_vel',Twist)
@@ -51,6 +52,10 @@ class BasicDroneController(object):
 		# Although there is a lot of data in this packet, we're only interested in the state at the moment	
 		self.status = navdata.state
 
+	def SendFlatTrim(self):
+		if(self.status == DroneStatus.Landed):
+			self.pubFlatTrim.publish(Empty())
+			
 	def SendTakeoff(self):
 		# Send a takeoff message to the ardrone driver
 		# Note we only send a takeoff message if the drone is landed - an unexpected takeoff is not good!
@@ -66,12 +71,20 @@ class BasicDroneController(object):
 		# Send an emergency (or reset) message to the ardrone driver
 		self.pubReset.publish(Empty())
 
-	def SetCommand(self,roll=0,pitch=0,yaw_velocity=0,z_velocity=0):
+	def SetCommand(self,roll=0,pitch=0,yaw_velocity=0,z_velocity=0, hover=False):
 		# Called by the main program to set the current command
-		self.command.linear.x  = pitch
-		self.command.linear.y  = roll
-		self.command.linear.z  = z_velocity
-		self.command.angular.z = yaw_velocity
+		if hover:
+			self.command.linear.x  = 0
+			self.command.linear.y  = 0
+			self.command.linear.z  = 0
+			self.command.angular.z = 0
+			self.command.angular.y = 0
+			self.command.angular.x = 0	
+		else:
+			self.command.linear.x  = pitch
+			self.command.linear.y  = roll
+			self.command.linear.z  = z_velocity
+			self.command.angular.z = yaw_velocity
 
 	def SendCommand(self,event):
 		# The previously set command is then sent out periodically if the drone is flying

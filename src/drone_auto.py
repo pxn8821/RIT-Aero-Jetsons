@@ -23,14 +23,14 @@ CENTER_DEADBAND = 50
 ## Distance in meters for how far to stasy from the target
 DISTANCE = 5
 ## Deadzone in meters for how far to stay from the target
-DISTANCE_DEADBAND = 0.5
+DISTANCE_DEADBAND = 1
 ## Pitch amount for following to target
-FOLLOW_SPEED = 0.0
+FOLLOW_SPEED = 0.05
 
 ## PID values for yaw
-yaw_Kp = 1.0
-yaw_Ki = 4.0
-yaw_Kd = 5.0
+yaw_Kp = 1.5
+yaw_Ki = 0.8
+yaw_Kd = 6.0
 
 ## Distance correction factor for larger targets
 DISTANCE_CORRECTION_FACTOR = 6.223
@@ -63,6 +63,7 @@ STATE_LAST_SPINNING = 1
 
 controller = None
 pidController = PIDController.PID(yaw_Kp, yaw_Ki, yaw_Kd)
+followPIDController = PIDController.PID(3, 0.5, 3)
 
 class KeyboardController(DroneVideoDisplay):
 	def __init__(self):
@@ -80,6 +81,7 @@ class KeyboardController(DroneVideoDisplay):
 		
 		if(key == 84): # T key for takeoff
 			print "Takeoff"
+			controller.SendFlatTrim()
 			controller.SendTakeoff()
 			STATE_FLYING = True
 		elif(key == 76): # L key for landing
@@ -138,10 +140,9 @@ def parseData(data):
 			tags_height = float(data.tags_height[i])
 			tags_distance = data.tags_distance[i]
 			tags_count = int(data.tags_count)
-	
-	if tags_count == 1:
-		tags_distance = tags_distance / 100
-		tags_distance = DISTANCE_CORRECTION_FACTOR * float(tags_distance)
+
+			tags_distance = tags_distance / 100
+			tags_distance = DISTANCE_CORRECTION_FACTOR * float(tags_distance)
 
 def centerOnTagPID():
 	if STATE_CENTERING:
@@ -152,22 +153,25 @@ def centerOnTagPID():
 			if(tags_xc > (CENTER_PIXEL + CENTER_DEADBAND) or tags_xc < (CENTER_PIXEL - CENTER_DEADBAND)):
 				yaw_command = pidController.update(tags_xc) / 2500
 			
-			if tags_distance > DISTANCE + DISTANCE_DEADBAND:
-				follow_command = FOLLOW_SPEED # Go forwards
-			elif tags_distance < DISTANCE - DISTANCE_DEADBAND:
-				follow_command = FOLLOW_SPEED * -1 # Go backwards
+			if(tags_distance > (DISTANCE + DISTANCE_DEADBAND) or tags_distance < (DISTANCE - DISTANCE_DEADBAND)):
+				follow_command = -1 * (followPIDController.update(tags_distance) / 2000)
+				print str(tags_distance) + ", " +  str(follow_command)
+
 			else:
 				reached_goal_target = True
-					
+			
 		else:
 			if STATE_LAST_SPINNING == 1:
 				yaw_command = -0.1
 			else:
 				yaw_command = 0.1
 				
-		controller.SetCommand(pitch=follow_command, yaw_velocity=yaw_command)
+		if(follow_command == 0 and yaw_command == 0):
+			controller.SetCommand(hover=True)
+		else:
+			controller.SetCommand(pitch=follow_command, yaw_velocity=yaw_command)
 	else:
-		controller.SetCommand(yaw_velocity=0)	
+		controller.SetCommand(hover=True)	
 		
 		
 def centerOnTag():
@@ -179,11 +183,11 @@ def centerOnTag():
 				STATE_LAST_SPINNING = 1
 				print "Right"
 			elif(tags_xc < (CENTER_PIXEL - CENTER_DEADBAND)):
-				STATE_LAST_SPINNING = 0
+				STATE_LAST_SPINNING = -1
 				print "Left"
 				controller.SetCommand(yaw_velocity=0.1)
 			else:
-				controller.SetCommand(yaw_velocity=0)
+				controller.SetCommand(hover=True)
 				print "Centered"
 		else:
 			if STATE_LAST_SPINNING == 1:
@@ -191,7 +195,7 @@ def centerOnTag():
 			else:
 				controller.SetCommand(yaw_velocity=0.1)
 	else:
-		controller.SetCommand(yaw_velocity=0.0)
+		controller.SetCommand(hover=True)
 				
 def ReceiveData(data):
 	parseData(data)
@@ -213,7 +217,7 @@ if __name__=='__main__':
 	STATE_FLYING = False
 	STATE_LAST_SPINNING = 0
 	pidController.setPoint(CENTER_PIXEL)
-	
+	followPIDController.setPoint(DISTANCE)
 	# Init navdata
 	sub_Navdata = rospy.Subscriber('/ardrone/navdata', Navdata, ReceiveData)
 	
