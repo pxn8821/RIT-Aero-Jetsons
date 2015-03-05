@@ -20,17 +20,17 @@ from PySide import QtCore, QtGui
 CENTER_PIXEL = 480
 ## Deadzone for the center X coordinate
 CENTER_DEADBAND = 50
-## Distance in meters for how far to stasy from the target
-DISTANCE = 5
+## Distance in meters for how far to stay from the target
+DISTANCE = 3
 ## Deadzone in meters for how far to stay from the target
 DISTANCE_DEADBAND = 1
 ## Pitch amount for following to target
-FOLLOW_SPEED = 0.05
+FOLLOW_SPEED = 0.00
 
 ## PID values for yaw
-yaw_Kp = 1.5
-yaw_Ki = 0.8
-yaw_Kd = 6.0
+yaw_Kp = 0.4
+yaw_Ki = 0.6
+yaw_Kd = 0.3
 
 ## Distance correction factor for larger targets
 DISTANCE_CORRECTION_FACTOR = 6.223
@@ -63,7 +63,7 @@ STATE_LAST_SPINNING = 1
 
 controller = None
 pidController = PIDController.PID(yaw_Kp, yaw_Ki, yaw_Kd)
-followPIDController = PIDController.PID(3, 0.5, 3)
+followPIDController = PIDController.PID(3, 0.5, 4)
 
 class KeyboardController(DroneVideoDisplay):
 	def __init__(self):
@@ -76,11 +76,12 @@ class KeyboardController(DroneVideoDisplay):
 		
 		
 	def keyPressEvent(self, event):
-		global STATE_CENTERING, STATE_FLYING, pidController, pidAdjustType
+		global STATE_CENTERING, STATE_FLYING, pidController, pidAdjustType,reached_goal_target
 		key = event.key()
 		
 		if(key == 84): # T key for takeoff
 			print "Takeoff"
+			reached_goal_target = False
 			controller.SendFlatTrim()
 			controller.SendTakeoff()
 			STATE_FLYING = True
@@ -145,26 +146,25 @@ def parseData(data):
 			tags_distance = DISTANCE_CORRECTION_FACTOR * float(tags_distance)
 
 def centerOnTagPID():
+	global reached_goal_target
 	if STATE_CENTERING:
 		yaw_command = 0
 		follow_command = 0
-		if found_front_tag:
-			
+		if found_front_tag and not reached_goal_target:
 			if(tags_xc > (CENTER_PIXEL + CENTER_DEADBAND) or tags_xc < (CENTER_PIXEL - CENTER_DEADBAND)):
 				yaw_command = pidController.update(tags_xc) / 2500
 			
 			if(tags_distance > (DISTANCE + DISTANCE_DEADBAND) or tags_distance < (DISTANCE - DISTANCE_DEADBAND)):
-				follow_command = -1 * (followPIDController.update(tags_distance) / 2000)
-				print str(tags_distance) + ", " +  str(follow_command)
-
+				follow_command = -1 * (followPIDController.update(tags_distance) / 2100)
 			else:
 				reached_goal_target = True
-			
+				print "Reached target"
 		else:
-			if STATE_LAST_SPINNING == 1:
-				yaw_command = -0.1
-			else:
-				yaw_command = 0.1
+			if not reached_goal_target:
+				if STATE_LAST_SPINNING == 1:
+					yaw_command = -0.1
+				else:
+					yaw_command = 0.1
 				
 		if(follow_command == 0 and yaw_command == 0):
 			controller.SetCommand(hover=True)
