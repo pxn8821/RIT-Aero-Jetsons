@@ -7,8 +7,8 @@
 	    <param name="altitude_max" value="3000" />		<!-- in millimeters = 3 meters = 9' -->
         <param name="altitude_min" value="50" />		<!-- in millimeters = 5cm = 2" -->
         <param name="euler_angle_max" value="0.5" />	<!-- maximum allowable body angle in radians = 5 degrees -->
-        <param name="control_vz_max" value="1000" />		<!-- maximum z velocity in mm/sec = 0.2m/sec -->
-	    <param name="control_yaw" value="4.5" />		<!-- maximum rotation rate in radians/sec = 40 degrees per second (1/9 rev/sec) -->
+        <param name="control_vz_max" value="2500" />		<!-- maximum z velocity in mm/sec = 0.2m/sec -->
+	    <param name="control_yaw" value="6.5" />		<!-- maximum rotation rate in radians/sec = 40 degrees per second (1/9 rev/sec) -->
 
 	    <param name="detect_type" value="10" />
 	    <param name="detections_select_h" value="32" />	<!-- In the horizontal camera, look for the orange-blue-orange markers -->
@@ -22,7 +22,7 @@
 	</node>
 	
 	<!-- Launches the joystick controller -->
-	<node name="joystick_controller" pkg="ardrone_tutorials" type="joystick_controller.py" output="screen" required="true">
+	<node name="joystick_controller" pkg="rit_aero" type="joystick_controller.py" output="screen" required="true">
 		<!-- Configures the joystick button mapping -->
 		<param name="ButtonEmergency"	value="2" />
 		<param name="ButtonLand"	value="0" />

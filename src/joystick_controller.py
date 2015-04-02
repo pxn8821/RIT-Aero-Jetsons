@@ -8,6 +8,7 @@
 # Import the ROS libraries, and load the manifest file which through <depend package=... /> will give us access to the project dependencies
 import roslib; roslib.load_manifest('ardrone_tutorials')
 import rospy
+import time
 
 # Load the DroneController class, which handles interactions with the drone, and the DroneVideoDisplay class, which handles video display
 from drone_controller import BasicDroneController
@@ -36,6 +37,18 @@ ScalePitch      = 1.0
 ScaleYaw        = 1.0
 ScaleZ          = 1.0
 
+class AeroJoystickController(DroneVideoDisplay):
+	def __init__(self):
+		super(AeroJoystickController,self).__init__()
+		
+	def keyPressEvent(self, event):
+		key = event.key()
+		
+		if(key == 83): # S key for screenshot
+			millis = int(round(time.time() * 1000))
+			super(AeroJoystickController, self).takeScreenshot('/home/ardrone/Desktop/screenshots/screenshot_' + str(millis) + '.JPG')
+			print "Taking Screenshot"
+	
 # handles the reception of joystick packets
 def ReceiveJoystickMessage(data):
 	print data
@@ -73,7 +86,7 @@ if __name__=='__main__':
 
 	# Now we construct our Qt Application and associated controllers and windows
 	app = QtGui.QApplication(sys.argv)
-	display = DroneVideoDisplay()
+	display = AeroJoystickController()
 	controller = BasicDroneController()
 
 	# subscribe to the /joy topic and handle messages of type Joy with the function ReceiveJoystickMessage
