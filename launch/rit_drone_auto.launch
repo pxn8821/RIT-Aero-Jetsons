@@ -5,14 +5,15 @@
 	    <param name="flight_without_shell" value="0" /> <!-- Changes internal controller gains if we are flying without the propeller guard -->
 	    
 	    <param name="altitude_max" value="3000" />		<!-- in millimeters = 3 meters = 9' -->
-        <param name="altitude_min" value="80" />		<!-- in millimeters = 5cm = 2" -->
-        <param name="euler_angle_max" value="0.25" />	<!-- maximum allowable body angle in radians = 5 degrees -->
+        <param name="altitude_min" value="150" />		<!-- in millimeters = 5cm = 2" -->
+        <param name="do_imu_caliberation" value="true" />
+        <param name="euler_angle_max" value="0.1" />	<!-- maximum allowable body angle in radians = 5 degrees -->
         <param name="control_vz_max" value="1000" />		<!-- maximum z velocity in mm/sec = 0.2m/sec -->
 	    <param name="control_yaw" value="4.5" />		<!-- maximum rotation rate in radians/sec = 40 degrees per second (1/9 rev/sec) -->
 	<param name="flying_mode" value="1" />
 	    <param name="detect_type" value="10" />
-	    <param name="detections_select_h" value="32" />	<!-- In the horizontal camera, look for the orange-blue-orange markers -->
-	    <param name="detections_select_v_hsync" value="0" />  <!-- In the vertical camera, detect the A4 marker -->
+	    <param name="detections_select_h" value="1" />	<!-- In the horizontal camera, look for the orange-blue-orange markers -->
+	    <param name="detections_select_v_hsync" value="128" />  <!-- In the vertical camera, detect the A4 marker -->
 	    <param name="enemy_colors" value="3" />			<!-- Orange-Blue-Orange = 3 -->
 	    <param name="enemy_without_shell" value="0" />	<!-- Detect the indoor stickers, rather than the outdoor hull -->
 	</node>

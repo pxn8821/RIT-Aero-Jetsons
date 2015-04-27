@@ -37,6 +37,7 @@ ScalePitch      = 1.0
 ScaleYaw        = 1.0
 ScaleZ          = 1.0
 
+
 class AeroJoystickController(DroneVideoDisplay):
 	def __init__(self):
 		super(AeroJoystickController,self).__init__()
@@ -52,6 +53,20 @@ class AeroJoystickController(DroneVideoDisplay):
 # handles the reception of joystick packets
 def ReceiveJoystickMessage(data):
 	print data
+	
+	if data.buttons[4] == 1:
+		print "Hard Setting"
+		ScaleRoll       = 2.0
+		ScalePitch      = 2.0
+		ScaleYaw        = 2.0
+		ScaleZ          = 2.0
+	else:
+		print "Soft Setting"
+		ScaleRoll       = 7.0
+		ScalePitch      = 7.0
+		ScaleYaw        = 7.0
+		ScaleZ          = 7.0
+			
 	if data.buttons[ButtonEmergency]==1:
 		rospy.loginfo("Emergency Button Pressed")
 		controller.SendEmergency()

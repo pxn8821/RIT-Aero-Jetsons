@@ -25,7 +25,7 @@ DISTANCE = 3
 ## Deadzone in meters for how far to stay from the target
 DISTANCE_DEADBAND = 1
 ## Pitch amount for following to target
-FOLLOW_SPEED = 0.00
+FOLLOW_SPEED = 0.1
 
 ## PID values for yaw
 yaw_Kp = 0.4
@@ -46,6 +46,7 @@ reached_goal_target = False
 
 # Whether it sees a target on the front camera or not
 found_front_tag = False
+found_bottom_tag = False
 
 # Current type of PID adjustment
 pidAdjustType = ''
@@ -128,9 +129,10 @@ class KeyboardController(DroneVideoDisplay):
 			print "Unknown command: " + str(key)
 		
 def parseData(data):
-	global tags_xc, tags_yc, tags_width, tags_height, tags_distance, tags_count, found_front_tag
+	global tags_xc, tags_yc, tags_width, tags_height, tags_distance, tags_count, found_front_tag, found_bottom_tag
 	tags_count = data.tags_count
 	found_front_tag = False
+	found_bottom_tag = False
 	
 	for i in range(int(tags_count)):
 		if(data.tags_type[i] == 0):
@@ -144,35 +146,39 @@ def parseData(data):
 
 			tags_distance = tags_distance / 100
 			tags_distance = DISTANCE_CORRECTION_FACTOR * float(tags_distance)
-
+		if(data.tags_type[i] == 131072):
+			found_bottom_tag = True
 def centerOnTagPID():
 	global reached_goal_target
-	if STATE_CENTERING:
-		yaw_command = 0
-		follow_command = 0
-		if found_front_tag and not reached_goal_target:
-			if(tags_xc > (CENTER_PIXEL + CENTER_DEADBAND) or tags_xc < (CENTER_PIXEL - CENTER_DEADBAND)):
-				yaw_command = pidController.update(tags_xc) / 2500
-			
-			if(tags_distance > (DISTANCE + DISTANCE_DEADBAND) or tags_distance < (DISTANCE - DISTANCE_DEADBAND)):
-				follow_command = -1 * (followPIDController.update(tags_distance) / 2100)
-			else:
-				reached_goal_target = True
-				print "Reached target"
-		else:
-			if not reached_goal_target:
-				if STATE_LAST_SPINNING == 1:
-					yaw_command = -0.1
-				else:
-					yaw_command = 0.1
+	if not found_bottom_tag:
+		if STATE_CENTERING:
+			yaw_command = 0
+			follow_command = 0
+			if found_front_tag and not reached_goal_target:
+				if(tags_xc > (CENTER_PIXEL + CENTER_DEADBAND) or tags_xc < (CENTER_PIXEL - CENTER_DEADBAND)):
+					yaw_command = pidController.update(tags_xc) / 2500
 				
-		if(follow_command == 0 and yaw_command == 0):
-			controller.SetCommand(hover=True)
+				if(tags_distance > (DISTANCE + DISTANCE_DEADBAND) or tags_distance < (DISTANCE - DISTANCE_DEADBAND)):
+					follow_command = -1 * (followPIDController.update(tags_distance) / 2100)
+				else:
+					reached_goal_target = True
+					print "Reached target"
+			else:
+				if not reached_goal_target:
+					if STATE_LAST_SPINNING == 1:
+						yaw_command = -0.1
+					else:
+						yaw_command = 0.1
+					
+			if(follow_command == 0 and yaw_command == 0):
+				controller.SetCommand(hover=True)
+			else:
+				controller.SetCommand(pitch=follow_command, yaw_velocity=yaw_command)
 		else:
-			controller.SetCommand(pitch=follow_command, yaw_velocity=yaw_command)
+			controller.SetCommand(hover=True)	
 	else:
+		print "On Top of Target"
 		controller.SetCommand(hover=True)	
-		
 		
 def centerOnTag():
 	global STATE_LAST_SPINNING
