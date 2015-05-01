@@ -58,7 +58,7 @@ def ReceiveJoystickMessage(data):
 		print "Hard Setting"
 		ScaleRoll       = 2.0
 		ScalePitch      = 2.0
-		ScaleYaw        = 2.0
+		ScaleYaw        = 1.0
 		ScaleZ          = 2.0
 	else:
 		print "Soft Setting"

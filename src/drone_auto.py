@@ -3,6 +3,8 @@
 import roslib; roslib.load_manifest('rit_aero')
 import rospy
 import PIDController
+import serial
+import time
 
 # Load the DroneController class, which handles interactions with the drone, and the DroneVideoDisplay class, which handles video display
 from drone_controller import BasicDroneController
@@ -21,7 +23,7 @@ CENTER_PIXEL = 480
 ## Deadzone for the center X coordinate
 CENTER_DEADBAND = 50
 ## Distance in meters for how far to stay from the target
-DISTANCE = 3
+DISTANCE = 5
 ## Deadzone in meters for how far to stay from the target
 DISTANCE_DEADBAND = 1
 ## Pitch amount for following to target
@@ -40,6 +42,10 @@ DISTANCE_CORRECTION_FACTOR = 6.223
 ########################
 
 ## Program variables
+
+ser = None
+
+done_total = False
 
 # Whether it is within range of the target or not
 reached_goal_target = False
@@ -77,7 +83,7 @@ class KeyboardController(DroneVideoDisplay):
 		
 		
 	def keyPressEvent(self, event):
-		global STATE_CENTERING, STATE_FLYING, pidController, pidAdjustType,reached_goal_target
+		global STATE_CENTERING, STATE_FLYING, pidController, pidAdjustType,reached_goal_target,ser
 		key = event.key()
 		
 		if(key == 84): # T key for takeoff
@@ -85,11 +91,16 @@ class KeyboardController(DroneVideoDisplay):
 			reached_goal_target = False
 			controller.SendFlatTrim()
 			controller.SendTakeoff()
+			controller.SetCommand(hover=True)
 			STATE_FLYING = True
 		elif(key == 76): # L key for landing
 			print "Land"
 			controller.SendLand()
 			STATE_FLYING = False
+		elif(key == 68): # D to connect to bluetooth
+			ser = serial.Serial('/dev/rfcomm0', 57600, timeout=10)
+			print "Connecting Bluetooth"
+
 		elif(key == 69): # E key to shut off everything
 			print "Emergency"
 			controller.SendEmergency()
@@ -148,8 +159,23 @@ def parseData(data):
 			tags_distance = DISTANCE_CORRECTION_FACTOR * float(tags_distance)
 		if(data.tags_type[i] == 131072):
 			found_bottom_tag = True
+			
+
+def dropObject():
+	global ser, done_total
+	if not done_total:
+		print "Starting Drop"
+		ser.write('2')
+		time.sleep(10)
+		ser.write('2')
+		done_total = True
+		print "Dropping Object"
+	pass
 def centerOnTagPID():
 	global reached_goal_target
+	if reached_goal_target:
+		dropObject()
+		return
 	if not found_bottom_tag:
 		if STATE_CENTERING:
 			yaw_command = 0
@@ -163,6 +189,7 @@ def centerOnTagPID():
 				else:
 					reached_goal_target = True
 					print "Reached target"
+					controller.SetCommand(hover=True)	
 			else:
 				if not reached_goal_target:
 					if STATE_LAST_SPINNING == 1:
@@ -177,35 +204,12 @@ def centerOnTagPID():
 		else:
 			controller.SetCommand(hover=True)	
 	else:
-		print "On Top of Target"
+		reached_goal_target = True
 		controller.SetCommand(hover=True)	
 		
-def centerOnTag():
-	global STATE_LAST_SPINNING
-	if STATE_CENTERING:
-		if tags_count == 1:
-			if(tags_xc > (CENTER_PIXEL + CENTER_DEADBAND)):
-				controller.SetCommand(yaw_velocity=-0.1)
-				STATE_LAST_SPINNING = 1
-				print "Right"
-			elif(tags_xc < (CENTER_PIXEL - CENTER_DEADBAND)):
-				STATE_LAST_SPINNING = -1
-				print "Left"
-				controller.SetCommand(yaw_velocity=0.1)
-			else:
-				controller.SetCommand(hover=True)
-				print "Centered"
-		else:
-			if STATE_LAST_SPINNING == 1:
-				controller.SetCommand(yaw_velocity=-0.1)
-			else:
-				controller.SetCommand(yaw_velocity=0.1)
-	else:
-		controller.SetCommand(hover=True)
-				
+
 def ReceiveData(data):
 	parseData(data)
-	#centerOnTag()
 	centerOnTagPID()
 				
 		
